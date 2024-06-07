@@ -9,9 +9,7 @@ const Result = ({ documentId, calculatedData }) => {
   const navigate = useNavigate();
   const { houseFootprint, waterFootprint, vehicleFootprint } = calculatedData;
   const totalFootprint = (parseFloat(houseFootprint || 0) + parseFloat(waterFootprint || 0) + parseFloat(vehicleFootprint || 0)).toFixed(2);
-
-  const [predictedFootprint, setPredictedFootprint] = useState(null);
-  const [category, setCategory] = useState(null);
+  const [prediction, setPrediction] = useState(null);
 
   useEffect(() => {
     const handleSubmit = async () => {
@@ -25,7 +23,7 @@ const Result = ({ documentId, calculatedData }) => {
         houseFootprint: house,
         waterFootprint: water,
         vehicleFootprint: vehicle,
-        totalFootprint: total
+        totalFootprint: total,
       };
 
       try {
@@ -45,32 +43,31 @@ const Result = ({ documentId, calculatedData }) => {
   useEffect(() => {
     const fetchPrediction = async () => {
       try {
-        const response = await axios.post('http://localhost:5000/predict', {
-          numberofpeople: 1, // replace with actual number of people
-          Total_footprint: totalFootprint
-        });
-        setPredictedFootprint(response.data.predicted_carbon_footprint);
-        setCategory(response.data.category);
+        const response = await axios.post('http://127.0.0.1:5000/predict', { email: user.email });
+        setPrediction(response.data.forecast);
       } catch (error) {
         console.error("Error fetching prediction:", error);
       }
     };
 
     fetchPrediction();
-  }, [totalFootprint]);
+  }, [user.email]);
 
-  const handleGoToDashboard = () => {
-    navigate('/userdashboard');
+  const handleGoToRec = () => {
+    if (prediction !== null) {
+      navigate('/recom_main', { state: { prediction: parseFloat(prediction).toFixed(2) } });
+    } else {
+      alert("Prediction data is not available");
+    }
   };
-  
-  const handleGoToRoom= () => {
-    navigate('/room', { state: { totalFootprint: totalFootprint } });
+
+  const handleGoToRoom = () => {
+    navigate('/room');
   };
-  
 
   return (
-    <div className="result-container">
-      <h2>Your Carbon Footprint:</h2>
+    <div className="welcome-container">
+      <h2 className='h2_comp'>Your Carbon Footprint:</h2>
       <div className="footprint-item">
         <span>House:</span> <span>{houseFootprint || 0} metric tons of CO2e</span>
       </div>
@@ -83,15 +80,14 @@ const Result = ({ documentId, calculatedData }) => {
       <div className="footprint-total">
         <span>Total:</span> <span>{totalFootprint} metric tons of CO2e</span>
       </div>
-      {predictedFootprint !== null && (
-        <div className="prediction">
-          <span>Predicted Carbon Footprint:</span> <span>{predictedFootprint.toFixed(2)} metric tons of CO2e</span>
-          <span>Category:</span> <span>{category}</span>
+      {prediction !== null && (
+        <div className="footprint-prediction">
+          <span>Predicted Total Footprint for Next Month:</span> <span>{prediction.toFixed(2)} metric tons of CO2e</span>
         </div>
       )}
       <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "30vh"}}>
-        <button style={{width: "300px", color:"black"}} onClick={handleGoToDashboard}>
-          Go to Dashboard
+        <button style={{width: "300px", color:"black"}} onClick={handleGoToRec}>
+          Get Suggestions
         </button>
         <button style={{width: "300px", color:"black"}} onClick={handleGoToRoom}>
           Join room
